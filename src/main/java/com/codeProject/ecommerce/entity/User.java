@@ -22,4 +22,12 @@ public class User {
     @Lob
     @Column(columnDefinition = "longblob")
     private byte[] img;
+
+    public String getEmail() {
+        return "";
+    }
+
+    public String getPassword() {
+        return "";
+    }
 }
