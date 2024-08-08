@@ -1,11 +1,18 @@
 package com.codeProject.ecommerce.controller;
 
 import com.codeProject.ecommerce.dto.AuthenticationRequest;
+import com.codeProject.ecommerce.dto.SignupRequest;
+import com.codeProject.ecommerce.dto.UserDto;
 import com.codeProject.ecommerce.entity.User;
 import com.codeProject.ecommerce.repository.UserRepository;
+import com.codeProject.ecommerce.services.auth.AuthService;
 import com.codeProject.ecommerce.utils.JwtUtils;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -21,16 +28,22 @@ import java.util.Optional;
 @RestController
 @RequiredArgsConstructor
 public class AuthController {
-    private final AuthenticationManager authenticationManager;
+    private AuthenticationManager authenticationManager;
 
-    private final UserDetailsService userDetailsService;
+    private UserDetailsService userDetailsService;
 
-    private final UserRepository userRepository;
+    private UserRepository userRepository;
 
-    private final JwtUtils jwtUtils;
+    private JwtUtils jwtUtils;
+
+    public static final String TOKEN_PREFIX = "Bearer ";
+
+    public static final String HEADER_STRING = "Bearer ";
+
+    private AuthService authService;
 
     @PostMapping("/authenticate")
-    public void createAuthenticationToken(@RequestBody AuthenticationRequest authenticationRequest, HttpServletResponse response) throws IOException {
+    public void createAuthenticationToken(@RequestBody AuthenticationRequest authenticationRequest, HttpServletResponse response) throws IOException, JSONException {
 
         try {
             authenticationManager
@@ -51,6 +64,18 @@ public class AuthController {
                     .put("role", optionalUser.get().getRole())
                     .toString()
             );
+
+            response.addHeader(HEADER_STRING, TOKEN_PREFIX + jwt);
         }
+    }
+
+    @PostMapping("/sign-up")
+    public ResponseEntity<?> signupUser(@RequestBody SignupRequest signupRequest) {
+        if(authService.hasUserWithEmail(signupRequest.getEmail())) {
+            return new ResponseEntity<>("User already exists", HttpStatus.NOT_ACCEPTABLE);
+        }
+
+        UserDto userDto = authService.createUser(signupRequest);
+        return new ResponseEntity<>(userDto, HttpStatus.CREATED);
     }
 }
